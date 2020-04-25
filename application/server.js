@@ -154,7 +154,9 @@ app.post('/upload/:uid', function (req, res) {
       return res.status(500).json(err)
       // An unknown error occurred when uploading.
     }
-    send_kafka_message(req.params.uid, req.files[0].key)
+    for (let i = 0; i < req.files.length; x++) {
+      send_kafka_message(req.params.uid, req.files[i].key)
+    }
     return res.status(200).send(req.file)
     // Everything went fine.
   })
