@@ -22,7 +22,7 @@ app.use(cors())
 
 function publish(topic, message) {
   const client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_ENDPOINT }),
-    producer = new Producer(client);
+    producer = new kafka.Producer(client);
 
   // First wait for the producer to be initialized
   producer.on(
