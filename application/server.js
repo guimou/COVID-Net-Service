@@ -74,8 +74,8 @@ const AWS = require('aws-sdk');
 // AWS.config.logger = console; // Debug purposes
 AWS.config.update({
   region: '',
-  accessKeyId: process.env.ACCESS_KEY_ID,
-  secretAccessKey: process.env.SECRET_ACCESS_KEY,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   sslEnabled: (process.env.S3_ENDPOINT.includes('https') ? true : false),
   s3ForcePathStyle: true,
   signatureVersion: 'v4'

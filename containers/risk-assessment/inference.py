@@ -17,7 +17,8 @@ from cloudevents.sdk.event import v02
 access_key = os.environ['AWS_ACCESS_KEY_ID']
 secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
 service_point = os.environ['S3_ENDPOINT']
-bucket_name = os.environ['BUCKETNAME']
+image_bucket = os.environ['IMAGE_BUCKET']
+model_bucket = os.environ['MODEL_BUCKET']
 application_url = os.environ['APPLICATION_URL']
 weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
@@ -90,8 +91,10 @@ def init_tf_session(weightspath,metaname,ckptname):
     sess = tf.Session()
     tf.get_default_graph()
 
-    saver = tf.train.import_meta_graph(os.path.join(weightspath, metaname))
-    saver.restore(sess, os.path.join(weightspath, ckptname))
+    meta_url = 's3://' + model_bucket + '/' + weightspath + '/' + metaname
+    ckpt_url = 's3://' + model_bucket + '/' + weightspath + '/' + ckptname
+    saver = tf.train.import_meta_graph(meta_url)
+    saver.restore(ckpt_url)
 
     return sess
 
@@ -145,7 +148,7 @@ def run_event(event):
         r =requests.get()
 
         # Make prediction
-        result = prediction(bucket_name,img_key)
+        result = prediction(image_bucket,img_key)
 
         # Send result
         url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction' + result['prediction'] + '&confidence=' + result['confidence']
