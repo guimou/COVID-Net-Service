@@ -9,7 +9,7 @@ const url = require('url');
 const uuid = require('uuid')
 
 const app = express();
-const socketServer = new WebSocket.Server({ port: 3030 });
+const socketServer = new WebSocket.Server({ port: process.env.WEB_SOCKET_PORT });
 
 app.use(cors())
 require('dotenv').config();
