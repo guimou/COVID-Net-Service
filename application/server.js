@@ -41,7 +41,6 @@ function publish(topic, message) {
             [{ topic, messages: [message] }],
             (err, result) => {
               console.log(err || result);
-              process.exit();
             }
           );
         }
