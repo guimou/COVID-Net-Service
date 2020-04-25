@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: covid-net-service-repo
+spec:
+  type: git
+  params:
+  - name: url
+    value: https://github.com/guimou/COVID-Net-Service.git
+  - name: revision
+    value: master

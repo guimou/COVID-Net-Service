@@ -1,0 +1,23 @@
+apiVersion: serving.knative.dev/v1 
+kind: Service
+metadata:
+  name: risk-assessment
+  namespace: covid-net-service
+spec:
+  template:
+    metadata:
+        annotations:
+          autoscaling.knative.dev/target: '2'
+          revisionTimestamp: ''
+    spec:
+      containers:
+      - image: image-registry.openshift-image-registry.svc:5000/covid-net-service/risk-assessment:latest
+        env: {}
+        resources:
+          limits:
+            cpu: '2'
+            memory: 1G
+          requests:
+            cpu: 400m
+            memory: 100M
+
