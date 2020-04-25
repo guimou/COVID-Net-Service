@@ -13,8 +13,8 @@ import tensorflow as tf
 from cloudevents.sdk import marshaller
 from cloudevents.sdk.event import v02
 
-access_key = os.environ['AWS_ACCESS_KEY_ID']
-secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+access_key = os.environ['ACCESS_KEY_ID']
+secret_key = os.environ['SECRET_ACCESS_KEY']
 service_point = os.environ['S3_ENDPOINT']
 bucket_name = os.environ['BUCKETNAME']
 application_url = os.environ['APPLICATION_URL']

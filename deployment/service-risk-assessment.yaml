@@ -22,8 +22,8 @@ spec:
           - secretRef:
               name: s3
         volumeMounts:
-          - mountPath: /opt/app-root/src/models
-            name: covid-models
+            - name: covid-models
+              mountPath: /opt/app-root/src/models
         resources:
           limits:
             cpu: '2'

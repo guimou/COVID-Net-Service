@@ -1,0 +1,54 @@
+kind: DeploymentConfig
+apiVersion: apps.openshift.io/v1
+metadata:
+  name: risk-assessment
+spec:
+  triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - risk-assessment
+        from:
+          kind: ImageStreamTag
+          namespace: covid-net-service
+          name: risk-assessment:latest
+    - type: ConfigChange
+  replicas: 1
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      labels:
+        name: risk-assessment
+    spec:
+      volumes:
+        - name: covid-models
+          persistentVolumeClaim:
+            claimName: covid-models
+      containers:
+        - name: risk-assessment
+          image: image-registry.openshift-image-registry.svc:5000/covid-net-service/risk-assessment
+          envFrom:
+          - configMapRef:
+              name: risk-assessment-config
+          - secretRef:
+              name: s3
+          ports:
+            - containerPort: 8080
+              protocol: TCP 
+          volumeMounts:
+              - name: covid-models
+                mountPath: /opt/app-root/src/model
+          resources:
+            limits:
+                cpu: '2'
+                memory: 4G
+            requests:
+              cpu: '2'
+              memory: 3G
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
