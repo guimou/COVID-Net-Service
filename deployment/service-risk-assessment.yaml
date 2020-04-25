@@ -10,14 +10,26 @@ spec:
           autoscaling.knative.dev/target: '2'
           revisionTimestamp: ''
     spec:
+      volumes:
+        - name: covid-models
+          persistentVolumeClaim:
+            claimName: covid-models
       containers:
       - image: image-registry.openshift-image-registry.svc:5000/covid-net-service/risk-assessment:latest
-        env: {}
+        envFrom:
+          - configMapRef:
+              name: app-config
+          - secretRef:
+              name: s3
+        volumeMounts:
+          - mountPath: /opt/app-root/src/models
+            name: covid-models
         resources:
           limits:
             cpu: '2'
-            memory: 1G
+            memory: 4G
           requests:
-            cpu: 400m
-            memory: 100M
+            cpu: '2'
+            memory: 3G
+      
 
