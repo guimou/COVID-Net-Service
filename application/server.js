@@ -172,6 +172,16 @@ app.get('/result', function (req, res, next) {
   });
 })
 
+// API - receive message
+app.get('/message', function (req, res, next) {
+  console.log('new message received')
+  socketServer.clients.forEach(function each(ws) {
+    if (ws.uid === req.query.uid) {
+      ws.send(JSON.stringify({ topic: 'message', data: { message: req.query.message } }))
+    }
+  });
+})
+
 /*  Server */
 
 app.use(express.static(path.join(__dirname, '/build')));

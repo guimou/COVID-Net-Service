@@ -39,6 +39,10 @@ class App extends Component {
         toast.success('New results received!')
       }
 
+      if (content.topic === "message") {
+        toast.info(content.data.message)
+      }
+
 
       /* console.log(JSON.parse(ms.data).data) */
     };
