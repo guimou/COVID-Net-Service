@@ -8,28 +8,60 @@ const path = require('path');
 const url = require('url');
 const uuid = require('uuid')
 
+require('dotenv').config();
+
 const app = express();
 const socketServer = new WebSocket.Server({ port: process.env.WEB_SOCKET_PORT });
 
 app.use(cors())
-require('dotenv').config();
+
 
 /**************************/
 /* Kafka functions        */
 /**************************/
 
-var Producer = kafka.Producer,
-  client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_ENDPOINT }),
-  producer = new Producer(client);
+function publish(topic, message) {
+  const client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_ENDPOINT }),
+    producer = new Producer(client);
 
-var send_kafka_message = (uid,image_name) => {
-  let payloads = [
-    { topic: process.env.KAFKA_ENDPOINT, messages: '{uid:'+ uid + ',image_name:' + image_name + '}' }
-  ];
+  // First wait for the producer to be initialized
+  producer.on(
+    'ready',
+    () => {
+      // Update metadata for the topic we'd like to publish to
+      client.refreshMetadata(
+        [topic],
+        (err) => {
+          if (err) {
+            throw err;
+          }
 
-  producer.send(payloads, function (err, data) {
-    console.log(data);
-  });
+          console.log(`Sending message to ${topic}: ${message}`);
+          producer.send(
+            [{ topic, messages: [message] }],
+            (err, result) => {
+              console.log(err || result);
+              process.exit();
+            }
+          );
+        }
+      );
+    }
+  );
+
+  // Handle errors
+  producer.on(
+    'error',
+    (err) => {
+      console.log('error', err);
+    }
+  );
+}
+
+
+function send_kafka_message(uid, image_name) {
+  let message = '{uid:' + uid + ',image_name:' + image_name + '}';
+  publish(process.env.KAFKA_TOPIC, message)
 }
 
 
@@ -123,7 +155,7 @@ app.post('/upload/:uid', function (req, res) {
       return res.status(500).json(err)
       // An unknown error occurred when uploading.
     }
-    send_kafka_message(req.params.uid,req.files[0].key)
+    send_kafka_message(req.params.uid, req.files[0].key)
     return res.status(200).send(req.file)
     // Everything went fine.
   })
