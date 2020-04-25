@@ -1,7 +1,9 @@
+import http.server
 import io
 import json
 import logging
 import os
+import socketserver
 import sys
 
 import boto3
