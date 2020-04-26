@@ -18,7 +18,7 @@ from cloudevents.sdk.event import v02
 
 access_key = os.environ['AWS_ACCESS_KEY_ID']
 secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-service_point = os.environ['S3_ENDPOINT']
+service_point = os.environ['S3_IMAGES_ENDPOINT']
 image_bucket = os.environ['IMAGE_BUCKET']
 model_bucket = os.environ['MODEL_BUCKET']
 application_url = os.environ['APPLICATION_URL']
