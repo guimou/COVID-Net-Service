@@ -26,6 +26,8 @@ weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 
+model_loaded = False
+
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
@@ -98,6 +100,8 @@ def init_tf_session(weightspath,metaname,ckptname):
     saver = tf.train.import_meta_graph(meta_url)
     saver.restore(sess,ckpt_url)
 
+    model_loaded = True
+
     return sess
 
 
@@ -145,6 +149,18 @@ def run_event(event):
         img_key = extracted_data['bucket_object']
         logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
 
+        if not model_loaded:
+            # Message user that we're loading the model
+            url = application_url + '/message?uid=' + uid + '&message=Loading model, please wait...' 
+            r =requests.get()
+            # Load model
+            sess = init_tf_session(weightspath,metaname,ckptname)
+            logging.info('model loaded')
+            # Message user that we're loading the model
+            url = application_url + '/message?uid=' + uid + '&message=Model loaded!' 
+            r =requests.get()
+            
+
         # Message user that we're starting
         url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
         r =requests.get()
@@ -161,10 +177,6 @@ def run_event(event):
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         raise
-
-# Load model
-sess = init_tf_session(weightspath,metaname,ckptname)
-logging.info('model loaded')
 
 # Start event listener
 client = CloudeventsServer()
