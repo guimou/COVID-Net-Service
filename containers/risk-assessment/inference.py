@@ -152,25 +152,25 @@ def run_event(event):
         if not model_loaded:
             # Message user that we're loading the model
             url = application_url + '/message?uid=' + uid + '&message=Loading model, please wait...' 
-            r =requests.get()
+            r =requests.get(url)
             # Load model
             sess = init_tf_session(weightspath,metaname,ckptname)
             logging.info('model loaded')
             # Message user that we're loading the model
             url = application_url + '/message?uid=' + uid + '&message=Model loaded!' 
-            r =requests.get()
+            r =requests.get(url)
             
 
         # Message user that we're starting
         url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
-        r =requests.get()
+        r =requests.get(url)
 
         # Make prediction
         result = prediction(image_bucket,img_key)
 
         # Send result
         url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction' + result['prediction'] + '&confidence=' + result['confidence']
-        r =requests.get()
+        r =requests.get(url)
 
         logging.info('result=' + result['prediction'])
 
