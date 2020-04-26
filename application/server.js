@@ -59,7 +59,7 @@ function publish(topic, message) {
 
 
 function send_kafka_message(uid, image_name) {
-  let message = '{uid:' + uid + ',image_name:' + image_name + '}';
+  let message = '{"uid":"' + uid + '","image_name":"' + image_name + '"}';
   publish(process.env.KAFKA_TOPIC, message)
 }
 
