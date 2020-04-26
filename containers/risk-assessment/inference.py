@@ -96,7 +96,7 @@ def init_tf_session(weightspath,metaname,ckptname):
     meta_url = 's3://' + model_bucket + '/' + weightspath + '/' + metaname
     ckpt_url = 's3://' + model_bucket + '/' + weightspath + '/' + ckptname
     saver = tf.train.import_meta_graph(meta_url)
-    saver.restore(ckpt_url)
+    saver.restore(sess,ckpt_url)
 
     return sess
 
