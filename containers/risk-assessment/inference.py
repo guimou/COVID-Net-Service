@@ -146,7 +146,7 @@ def run_event(event):
         # Retrieve info from notification
         extracted_data = extract_data(event.Data())
         uid = extracted_data['uid']
-        img_key = extracted_data['bucket_object']
+        img_key = extracted_data['image_name']
         logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
 
         if not model_loaded:
