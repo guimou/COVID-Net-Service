@@ -8,5 +8,5 @@ spec:
   topics: covid
   sink:
     apiVersion: serving.knative.dev/v1alpha1
-    kind: DeploymentConfig
+    kind: Service
     name: risk-assessment

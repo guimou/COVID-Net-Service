@@ -83,8 +83,9 @@ AWS.config.update({
 const s3Endpoint = process.env.S3_ENDPOINT;
 var s3 = new AWS.S3({ endpoint: s3Endpoint });
 
-
-// Upload functions
+/**************************/
+/* Upload functions       */
+/**************************/
 var cloudStorage = multerS3({
   s3: s3,
   bucket: process.env.BUCKETNAME,
@@ -155,6 +156,7 @@ app.post('/upload/:uid', function (req, res) {
       // An unknown error occurred when uploading.
     }
     for (let i = 0; i < req.files.length; i++) {
+      console.log('Sendig Kafka message')
       send_kafka_message(req.params.uid, req.files[i].key)
     }
     return res.status(200).send(req.file)

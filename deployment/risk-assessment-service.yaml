@@ -14,9 +14,9 @@ spec:
       - image: image-registry.openshift-image-registry.svc:5000/covid-net-service/risk-assessment:latest
         envFrom:
           - configMapRef:
-              name: app-config
+              name: risk-assessment-config
           - secretRef:
-              name: s3
+              name: s3-rook
         resources:
           limits:
             cpu: '2'
