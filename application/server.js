@@ -172,6 +172,7 @@ app.get('/result', function (req, res, next) {
       ws.send(JSON.stringify({ topic: 'result', data: { image_name: req.query.image_name, prediction: req.query.prediction, confidence: req.query.confidence } }))
     }
   });
+  return res.send('Result received')
 })
 
 // API - receive message
@@ -182,6 +183,7 @@ app.get('/message', function (req, res, next) {
       ws.send(JSON.stringify({ topic: 'message', data: { message: req.query.message } }))
     }
   });
+  return res.send('Message received')
 })
 
 /*  Server */
