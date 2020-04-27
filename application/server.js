@@ -23,15 +23,15 @@ app.use(cors())
 
 function create_cloudevent(uid, image_name) {
 
-  const v1 = require("cloudevents-sdk/v1");
+  const v02 = require("cloudevents-sdk/v02");
 
   /* Creating an event */
-  let myevent = v1.event()
+  let myevent = v02.event()
     .type("covidnet.create")
     .source("urn:event:from:covidnet:backend")
-    .dataContentType("application/json")
-    .data('{ "uid":"' + uid + '","image_name":"' + image_name + '"}');
-
+    .contenttype("application/json")
+    .data({uid:uid,image_name:image_name});
+  
   return myevent.format();
 
 }
@@ -80,7 +80,7 @@ function publish(topic, message) {
 
 
 function send_kafka_message(uid, image_name) {
-  let message = create_cloudevent(uid,image_name)
+  let message = JSON.stringify(create_cloudevent(uid,image_name))
   publish(process.env.KAFKA_TOPIC, message)
 }
 

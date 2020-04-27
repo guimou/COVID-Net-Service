@@ -142,11 +142,11 @@ def prediction(bucket,key):
 
 # Extract data from incoming event
 def extract_data(msg):
-    logging.info('extract_data')
-    uid=msg['uid']
-    image_name=msg['image_name']
-    data = {'uid': uid, 'image_name': image_name}
-    return data
+    #logging.info('extract_data')
+    #uid=msg['data']['uid']
+    #image_name=msg['data']['image_name']
+    #data = {'uid': uid, 'image_name': image_name}
+    return msg['data']
 
 # Run this when a new event has been received
 def run_event(event):
