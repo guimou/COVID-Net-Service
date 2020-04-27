@@ -154,6 +154,7 @@ def run_event(event):
     img_key = extracted_data['image_name']
     logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
 
+    """ 
     if not model_loaded:
         logging.info('model not loaded')
         # Message user that we're loading the model
@@ -164,7 +165,8 @@ def run_event(event):
         logging.info('model loaded')
         # Message user that we're finished loading the model
         url = application_url + '/message?uid=' + uid + '&message=Model loaded!' 
-        r =requests.get(url)
+        r =requests.get(url) 
+    """
         
     # Message user that we're starting
     url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
@@ -179,6 +181,9 @@ def run_event(event):
 
     logging.info('result=' + result['prediction'])
 
+# Load model
+init_tf_session(weightspath,metaname,ckptname)
+logging.info('model loaded')
 
 # Start event listener
 client = CloudeventsServer()
