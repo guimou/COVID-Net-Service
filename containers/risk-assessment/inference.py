@@ -11,11 +11,14 @@ import cv2
 import numpy as np
 import requests
 import tensorflow as tf
-from tensorflow.python.lib.io import file_io
 
 from cloudevents.sdk import marshaller
 from cloudevents.sdk.event import v02
 
+# Set logging
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+# General Variables
 access_key = os.environ['AWS_ACCESS_KEY_ID']
 secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
 service_point = os.environ['S3_IMAGES_ENDPOINT']
@@ -26,15 +29,22 @@ weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 
+# TF initialization and variables
+sess = tf.Session()
 model_loaded = False
+mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
+inv_mapping = {0: 'normal', 1: 'pneumonia', 2: 'COVID-19'}
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+meta_url = 's3://' + model_bucket + '/' + weightspath + '/' + metaname
+ckpt_url = 's3://' + model_bucket + '/' + weightspath + '/' + ckptname
 
+# S3 connection to retrieve image
 s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
                        aws_access_key_id = access_key,
                        aws_secret_access_key = secret_key,
                         use_ssl = True if 'https' in service_point else False)
 
+# Events listener
 m = marshaller.NewDefaultHTTPMarshaller()
 
 class ForkedHTTPServer(socketserver.ForkingMixIn, http.server.HTTPServer):
@@ -91,12 +101,10 @@ class CloudeventsServer(object):
                 httpd.server_close()
                 raise
 
+
 def init_tf_session(weightspath,metaname,ckptname):
-    sess = tf.Session()
     tf.get_default_graph()
 
-    meta_url = 's3://' + model_bucket + '/' + weightspath + '/' + metaname
-    ckpt_url = 's3://' + model_bucket + '/' + weightspath + '/' + ckptname
     saver = tf.train.import_meta_graph(meta_url)
     saver.restore(sess,ckpt_url)
 
@@ -106,18 +114,12 @@ def init_tf_session(weightspath,metaname,ckptname):
 
 
 def prediction(bucket,key):
-    mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
-    inv_mapping = {0: 'normal', 1: 'pneumonia', 2: 'COVID-19'}
-
-    sess = tf.Session()
-    tf.get_default_graph()
-
     graph = tf.get_default_graph()
 
     image_tensor = graph.get_tensor_by_name("input_1:0")
     pred_tensor = graph.get_tensor_by_name("dense_3/Softmax:0")
 
-    # Load image from S3
+    # Load image from S3 and prepare
     obj = s3client.get_object(Bucket=bucket, Key=key)
     img_stream = io.BytesIO(obj['Body'].read())
     x = cv2.imdecode(np.fromstring(img_stream.read(), np.uint8), 1)
@@ -126,12 +128,16 @@ def prediction(bucket,key):
     x = x[int(h/6):, :]
     x = cv2.resize(x, (224, 224))
     x = x.astype('float32') / 255.0
+
+    # Make prediction
     pred = sess.run(pred_tensor, feed_dict={image_tensor: np.expand_dims(x, axis=0)})
 
+    # Format data
     data = {'prediction':inv_mapping[pred.argmax(axis=1)[0]],'confidence':'Normal: {:.3f}, Pneumonia: {:.3f}, COVID-19: {:.3f}'.format(pred[0][0], pred[0][1], pred[0][2])}
 
     return data
 
+# Extract data from incoming event
 def extract_data(msg):
     logging.info('extract_data')
     uid=msg['uid']
@@ -139,7 +145,7 @@ def extract_data(msg):
     data = {'uid': uid, 'image_name': image_name}
     return data
 
-
+# Run this when a new event has been received
 def run_event(event):
     logging.info(event.Data())
     try:
@@ -154,13 +160,12 @@ def run_event(event):
             url = application_url + '/message?uid=' + uid + '&message=Loading model, please wait...' 
             r =requests.get(url)
             # Load model
-            sess = init_tf_session(weightspath,metaname,ckptname)
+            init_tf_session(weightspath,metaname,ckptname)
             logging.info('model loaded')
-            # Message user that we're loading the model
+            # Message user that we're finished loading the model
             url = application_url + '/message?uid=' + uid + '&message=Model loaded!' 
             r =requests.get(url)
             
-
         # Message user that we're starting
         url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
         r =requests.get(url)

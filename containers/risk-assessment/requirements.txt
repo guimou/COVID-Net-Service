@@ -1,5 +1,5 @@
 tensorflow==1.15.*
-opencv-python==4.2.*
+opencv-python-headless==4.2.*
 boto3==1.12.*
 cloudevents==0.2.*
 requests==2.23.*
