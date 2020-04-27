@@ -87,9 +87,13 @@ class CloudeventsServer(object):
                     raise   
 
                 logging.info(event)
-                func(event)
+
+                # Send ack first to free connection
                 self.send_response(204)
                 self.end_headers()
+                
+                func(event)
+
                 return
 
         socketserver.TCPServer.allow_reuse_address = True
@@ -133,19 +137,15 @@ def prediction(bucket,key):
     # Make prediction
     logging.info('make prediction')
     pred = sess.run(pred_tensor, feed_dict={image_tensor: np.expand_dims(x, axis=0)})
-
+    logging.info('prediction made')
     # Format data
     data = {'prediction':inv_mapping[pred.argmax(axis=1)[0]],'confidence':'Normal: {:.3f}, Pneumonia: {:.3f}, COVID-19: {:.3f}'.format(pred[0][0], pred[0][1], pred[0][2])}
-    logging.info('data')
+    logging.info(data)
 
     return data
 
 # Extract data from incoming event
 def extract_data(msg):
-    #logging.info('extract_data')
-    #uid=msg['data']['uid']
-    #image_name=msg['data']['image_name']
-    #data = {'uid': uid, 'image_name': image_name}
     return msg['data']
 
 # Run this when a new event has been received
