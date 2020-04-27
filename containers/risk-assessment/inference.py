@@ -16,7 +16,7 @@ from cloudevents.sdk import marshaller
 from cloudevents.sdk.event import v02
 
 # Set logging
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # General Variables
 access_key = os.environ['AWS_ACCESS_KEY_ID']
@@ -30,7 +30,7 @@ metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 
 # TF initialization and variables
-sess = tf.Session()
+sess = tf.compat.v1.Session()
 model_loaded = False
 mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
 inv_mapping = {0: 'normal', 1: 'pneumonia', 2: 'COVID-19'}
@@ -109,7 +109,7 @@ class CloudeventsServer(object):
 def init_tf_session(weightspath,metaname,ckptname):
     global model_loaded
 
-    tf.get_default_graph()
+    tf.compat.v1.get_default_graph()
     saver = tf.train.import_meta_graph(meta_url)
     saver.restore(sess,ckpt_url)
 
