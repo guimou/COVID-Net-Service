@@ -30,7 +30,7 @@ metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 
 # TF initialization and variables
-sess = tf.compat.v1.Session()
+#sess = tf.compat.v1.Session()
 #graph = tf.get_default_graph()
 
 mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
@@ -108,19 +108,19 @@ class CloudeventsServer(object):
 
 
 def init_tf_session(weightspath,metaname,ckptname):
-    global sess
-
+    sess = tf.compat.v1.Session()
     tf.compat.v1.get_default_graph()
     saver = tf.train.import_meta_graph(meta_url)
     saver.restore(sess,ckpt_url)
 
+    graph = tf.compat.v1.get_default_graph()
 
-def prediction(bucket,key):
-    global sess
+    return sess,graph
+
+
+def prediction(sess,graph,bucket,key):
     
     logging.info('start prediction')
-    
-    graph = tf.get_default_graph()
 
     image_tensor = graph.get_tensor_by_name("input_1:0")
     pred_tensor = graph.get_tensor_by_name("dense_3/Softmax:0")
@@ -152,6 +152,8 @@ def extract_data(msg):
 
 # Run this when a new event has been received
 def run_event(event):
+    global sess,graph
+
     logging.info(event.Data())
 
     # Retrieve info from notification
@@ -165,7 +167,7 @@ def run_event(event):
     r =requests.get(url)
 
     # Make prediction
-    result = prediction(image_bucket,img_key)
+    result = prediction(sess,graph,image_bucket,img_key)
 
     # Send result
     url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction' + result['prediction'] + '&confidence=' + result['confidence']
@@ -174,7 +176,7 @@ def run_event(event):
     logging.info('result=' + result['prediction'])
 
 # Load model
-init_tf_session(weightspath,metaname,ckptname)
+sess,graph = init_tf_session(weightspath,metaname,ckptname)
 logging.info('model loaded')
 
 # Start event listener
