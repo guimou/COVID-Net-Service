@@ -111,8 +111,6 @@ def init_tf_session(weightspath,metaname,ckptname):
 
     model_loaded = True
 
-    return sess
-
 
 def prediction(bucket,key):
     graph = tf.get_default_graph()
