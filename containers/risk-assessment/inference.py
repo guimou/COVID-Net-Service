@@ -60,7 +60,7 @@ class CloudeventsServer(object):
     def __init__(self, port=8080):
         self.port = port
 
-    def start_receiver(self, func):
+    def start_receiver(self, func, sess, graph):
         """Start listening to HTTP requests
         :param func: the callback to call upon a cloudevents request
         :type func: cloudevent -> none
@@ -93,7 +93,7 @@ class CloudeventsServer(object):
                 self.send_response(204)
                 self.end_headers()
                 
-                func(event)
+                func(event,sess,graph)
 
                 return
 
@@ -151,9 +151,7 @@ def extract_data(msg):
     return msg['data']
 
 # Run this when a new event has been received
-def run_event(event):
-    global sess,graph
-
+def run_event(event,sess,graph):
     logging.info(event.Data())
 
     # Retrieve info from notification
@@ -181,4 +179,4 @@ logging.info('model loaded')
 
 # Start event listener
 client = CloudeventsServer()
-client.start_receiver(run_event)
+client.start_receiver(run_event,sess,graph)
