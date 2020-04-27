@@ -149,40 +149,38 @@ def extract_data(msg):
 # Run this when a new event has been received
 def run_event(event):
     logging.info(event.Data())
-    try:
-        # Retrieve info from notification
-        extracted_data = extract_data(event.Data())
-        uid = extracted_data['uid']
-        img_key = extracted_data['image_name']
-        logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
 
-        if not model_loaded:
-            # Message user that we're loading the model
-            url = application_url + '/message?uid=' + uid + '&message=Loading model, please wait...' 
-            r =requests.get(url)
-            # Load model
-            init_tf_session(weightspath,metaname,ckptname)
-            logging.info('model loaded')
-            # Message user that we're finished loading the model
-            url = application_url + '/message?uid=' + uid + '&message=Model loaded!' 
-            r =requests.get(url)
-            
-        # Message user that we're starting
-        url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
+    # Retrieve info from notification
+    extracted_data = extract_data(event.Data())
+    uid = extracted_data['uid']
+    img_key = extracted_data['image_name']
+    logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
+
+    if not model_loaded:
+        logging.info('model not loaded')
+        # Message user that we're loading the model
+        url = application_url + '/message?uid=' + uid + '&message=Loading model, please wait...' 
         r =requests.get(url)
-
-        # Make prediction
-        result = prediction(image_bucket,img_key)
-
-        # Send result
-        url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction' + result['prediction'] + '&confidence=' + result['confidence']
+        # Load model
+        init_tf_session(weightspath,metaname,ckptname)
+        logging.info('model loaded')
+        # Message user that we're finished loading the model
+        url = application_url + '/message?uid=' + uid + '&message=Model loaded!' 
         r =requests.get(url)
+        
+    # Message user that we're starting
+    url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
+    r =requests.get(url)
 
-        logging.info('result=' + result['prediction'])
+    # Make prediction
+    result = prediction(image_bucket,img_key)
 
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-        raise
+    # Send result
+    url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction' + result['prediction'] + '&confidence=' + result['confidence']
+    r =requests.get(url)
+
+    logging.info('result=' + result['prediction'])
+
 
 # Start event listener
 client = CloudeventsServer()
