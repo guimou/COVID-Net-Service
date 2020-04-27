@@ -103,8 +103,9 @@ class CloudeventsServer(object):
 
 
 def init_tf_session(weightspath,metaname,ckptname):
-    tf.get_default_graph()
+    global model_loaded
 
+    tf.get_default_graph()
     saver = tf.train.import_meta_graph(meta_url)
     saver.restore(sess,ckpt_url)
 
