@@ -29,7 +29,14 @@ weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 
+# TF initialization and variables
+sess = tf.compat.v1.Session()
 model_loaded = False
+mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
+inv_mapping = {0: 'normal', 1: 'pneumonia', 2: 'COVID-19'}
+
+meta_url = 's3://' + model_bucket + '/' + weightspath + '/' + metaname
+ckpt_url = 's3://' + model_bucket + '/' + weightspath + '/' + ckptname
 
 # S3 connection to retrieve image
 s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
@@ -110,23 +117,8 @@ def init_tf_session(weightspath,metaname,ckptname):
 
 
 def prediction(bucket,key):
-    global model_loaded
-    # TF initialization and variables
-    sess = tf.compat.v1.Session()
-    graph = tf.get_default_graph()
-
-    meta_url = 's3://' + model_bucket + '/' + weightspath + '/' + metaname
-    ckpt_url = 's3://' + model_bucket + '/' + weightspath + '/' + ckptname
-    
-    mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
-    inv_mapping = {0: 'normal', 1: 'pneumonia', 2: 'COVID-19'}
-
-    tf.compat.v1.get_default_graph()
-    saver = tf.train.import_meta_graph(meta_url)
-    saver.restore(sess,ckpt_url)
-    
-
     logging.info('start prediction')
+    graph = tf.get_default_graph()
 
     image_tensor = graph.get_tensor_by_name("input_1:0")
     pred_tensor = graph.get_tensor_by_name("dense_3/Softmax:0")
@@ -180,7 +172,7 @@ def run_event(event):
     logging.info('result=' + result['prediction'])
 
 # Load model
-
+init_tf_session(weightspath,metaname,ckptname)
 logging.info('model loaded')
 
 # Start event listener
