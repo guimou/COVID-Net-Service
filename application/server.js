@@ -187,9 +187,10 @@ app.post('/upload/:uid', function (req, res) {
 
 // API - receive result
 app.get('/result', function (req, res, next) {
-  console.log('new result received: ' + req.query.prediction)
+  console.log('new result for ' + req.query.message + ' received: ' + req.query.prediction)
   socketServer.clients.forEach(function each(ws) {
     if (ws.uid === req.query.uid) {
+      console.log('send websocket result')
       ws.send(JSON.stringify({ topic: 'result', data: { image_name: req.query.image_name, prediction: req.query.prediction, confidence: req.query.confidence } }))
     }
   });
@@ -198,9 +199,10 @@ app.get('/result', function (req, res, next) {
 
 // API - receive message
 app.get('/message', function (req, res, next) {
-  console.log('new message received: ' + req.query.message)
+  console.log('new message for ' + req.query.message + ' received: ' + req.query.message)
   socketServer.clients.forEach(function each(ws) {
     if (ws.uid === req.query.uid) {
+      console.log('send websocket message')
       ws.send(JSON.stringify({ topic: 'message', data: { message: req.query.message } }))
     }
   });
