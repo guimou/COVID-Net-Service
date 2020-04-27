@@ -113,12 +113,14 @@ def init_tf_session(weightspath,metaname,ckptname):
 
 
 def prediction(bucket,key):
+    logging.info('start prediction')
     graph = tf.get_default_graph()
 
     image_tensor = graph.get_tensor_by_name("input_1:0")
     pred_tensor = graph.get_tensor_by_name("dense_3/Softmax:0")
 
     # Load image from S3 and prepare
+    logging.info('load image')
     obj = s3client.get_object(Bucket=bucket, Key=key)
     img_stream = io.BytesIO(obj['Body'].read())
     x = cv2.imdecode(np.fromstring(img_stream.read(), np.uint8), 1)
@@ -129,10 +131,12 @@ def prediction(bucket,key):
     x = x.astype('float32') / 255.0
 
     # Make prediction
+    logging.info('make prediction')
     pred = sess.run(pred_tensor, feed_dict={image_tensor: np.expand_dims(x, axis=0)})
 
     # Format data
     data = {'prediction':inv_mapping[pred.argmax(axis=1)[0]],'confidence':'Normal: {:.3f}, Pneumonia: {:.3f}, COVID-19: {:.3f}'.format(pred[0][0], pred[0][1], pred[0][2])}
+    logging.info('data')
 
     return data
 
@@ -153,21 +157,7 @@ def run_event(event):
     uid = extracted_data['uid']
     img_key = extracted_data['image_name']
     logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
-
-    """ 
-    if not model_loaded:
-        logging.info('model not loaded')
-        # Message user that we're loading the model
-        url = application_url + '/message?uid=' + uid + '&message=Loading model, please wait...' 
-        r =requests.get(url)
-        # Load model
-        init_tf_session(weightspath,metaname,ckptname)
-        logging.info('model loaded')
-        # Message user that we're finished loading the model
-        url = application_url + '/message?uid=' + uid + '&message=Model loaded!' 
-        r =requests.get(url) 
-    """
-        
+      
     # Message user that we're starting
     url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
     r =requests.get(url)

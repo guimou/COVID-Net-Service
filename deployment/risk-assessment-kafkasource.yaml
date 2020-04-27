@@ -5,7 +5,7 @@ metadata:
 spec:
   consumerGroup: risk-assessment
   bootstrapServers: my-cluster-kafka-bootstrap.kafka:9092
-  topics: covid
+  topics: covid-notification
   sink:
     apiVersion: serving.knative.dev/v1alpha1
     kind: Service
