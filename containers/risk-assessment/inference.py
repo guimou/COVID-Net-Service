@@ -31,7 +31,8 @@ ckptname = os.environ['CKPTNAME']
 
 # TF initialization and variables
 sess = tf.compat.v1.Session()
-model_loaded = False
+#graph = tf.get_default_graph()
+
 mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
 inv_mapping = {0: 'normal', 1: 'pneumonia', 2: 'COVID-19'}
 
@@ -107,17 +108,18 @@ class CloudeventsServer(object):
 
 
 def init_tf_session(weightspath,metaname,ckptname):
-    global model_loaded
+    global sess
 
     tf.compat.v1.get_default_graph()
     saver = tf.train.import_meta_graph(meta_url)
     saver.restore(sess,ckpt_url)
 
-    model_loaded = True
-
 
 def prediction(bucket,key):
+    global sess
+    
     logging.info('start prediction')
+    
     graph = tf.get_default_graph()
 
     image_tensor = graph.get_tensor_by_name("input_1:0")
