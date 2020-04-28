@@ -187,7 +187,7 @@ app.post('/upload/:uid', function (req, res) {
 
 // API - receive result
 app.get('/result', function (req, res, next) {
-  console.log('new result for ' + req.query.message + ' received: ' + req.query.prediction)
+  console.log('new result for ' + req.query.uid + ' received: ' + req.query.prediction + ', confidence: ' + req.query.confidence)
   socketServer.clients.forEach(function each(ws) {
     if (ws.uid === req.query.uid) {
       console.log('send websocket result')
@@ -199,7 +199,7 @@ app.get('/result', function (req, res, next) {
 
 // API - receive message
 app.get('/message', function (req, res, next) {
-  console.log('new message for ' + req.query.message + ' received: ' + req.query.message)
+  console.log('new message for ' + req.query.uid + ' received: ' + req.query.message)
   socketServer.clients.forEach(function each(ws) {
     if (ws.uid === req.query.uid) {
       console.log('send websocket message')

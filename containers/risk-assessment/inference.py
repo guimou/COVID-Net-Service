@@ -9,7 +9,7 @@ import numpy as np
 import requests
 import tensorflow as tf
 from celery import Celery
-from flask import Flask, request
+from flask import Flask, request, make_response, jsonify
 from waitress import serve
 
 # Set logging
@@ -104,7 +104,7 @@ def process(uid,img_key):
     logging.info('result=' + result['prediction'])
 
     # Send result
-    url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction' + result['prediction'] + '&confidence=' + result['confidence']
+    url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction=' + result['prediction'] + '&confidence=' + result['confidence']
     r =requests.get(url) 
 
 @app.route('/', methods=['POST'])
@@ -113,6 +113,6 @@ def get_post():
     uid = data['uid']
     img_key = data['image_name']
     process(uid,img_key)
-    return 'data processing...'
+    return make_response(jsonify({'msg': 'Image processing...'}), 201) 
 
 serve(app, host="0.0.0.0", port=8080)   
