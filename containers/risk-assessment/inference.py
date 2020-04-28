@@ -1,9 +1,6 @@
-import http.server
 import io
-import json
 import logging
 import os
-import socketserver
 import sys
 
 import boto3
@@ -11,9 +8,9 @@ import cv2
 import numpy as np
 import requests
 import tensorflow as tf
-
-from cloudevents.sdk import marshaller
-from cloudevents.sdk.event import v02
+from celery import Celery
+from flask import Flask, request
+from waitress import serve
 
 # Set logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -28,6 +25,7 @@ application_url = os.environ['APPLICATION_URL']
 weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
+redis_server = os.environ['REDIS_SERVER']
 
 # TF initialization and variables
 #sess = tf.compat.v1.Session()
@@ -45,138 +43,76 @@ s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
                        aws_secret_access_key = secret_key,
                         use_ssl = True if 'https' in service_point else False)
 
-# Events listener
-m = marshaller.NewDefaultHTTPMarshaller()
-
-class ForkedHTTPServer(socketserver.ForkingMixIn, http.server.HTTPServer):
-    """Handle requests with fork."""
-
-
-class CloudeventsServer(object):
-    """Listen for incoming HTTP cloudevents requests.
-    cloudevents request is simply a HTTP Post request following a well-defined
-    of how to pass the event data.
-    """
-    def __init__(self, port=8080):
-        self.port = port
-
-    def start_receiver(self, func, sess, graph):
-        """Start listening to HTTP requests
-        :param func: the callback to call upon a cloudevents request
-        :type func: cloudevent -> none
-        """
-        class BaseHttp(http.server.BaseHTTPRequestHandler):
-            def do_POST(self):
-                logging.info('POST received')
-                content_type = self.headers.get('Content-Type')
-                content_len = int(self.headers.get('Content-Length'))
-                headers = dict(self.headers)
-                data = self.rfile.read(content_len)
-                data = data.decode('utf-8')
-                logging.info(content_type)
-                logging.info(data)
-
-                if content_type != 'application/json':
-                    logging.info('Not JSON')
-                    data = io.StringIO(data)
-
-                try:
-                    event = v02.Event()
-                    event = m.FromRequest(event, headers, data, json.loads)
-                except Exception as e:
-                    logging.error(f"Event error: {e}")
-                    raise   
-
-                logging.info(event)
-
-                # Send ack first to free connection
-                self.send_response(204)
-                self.end_headers()
-                
-                func(event,sess,graph)
-
-                return
-
-        socketserver.TCPServer.allow_reuse_address = True
-        with ForkedHTTPServer(("", self.port), BaseHttp) as httpd:
-            try:
-                logging.info("serving at port {}".format(self.port))
-                httpd.serve_forever()
-            except:
-                httpd.server_close()
-                raise
-
-
-def init_tf_session(weightspath,metaname,ckptname):
-    sess = tf.compat.v1.Session()
-    tf.compat.v1.get_default_graph()
-    saver = tf.train.import_meta_graph(meta_url)
-    saver.restore(sess,ckpt_url)
-
-    graph = tf.compat.v1.get_default_graph()
-
-    return sess,graph
-
-
-def prediction(sess,graph,bucket,key):
+class Model(object):
+    def __init__(self,meta_url,ckpt_url):
+        self.sess = tf.compat.v1.Session()
+        tf.compat.v1.get_default_graph()
+        
+        saver = tf.compat.v1.train.import_meta_graph(meta_url)
+        saver.restore(self.sess,ckpt_url)
+        
+        graph = tf.compat.v1.get_default_graph()
     
-    logging.info('start prediction')
+        self.image_tensor = graph.get_tensor_by_name("input_1:0")
+        self.pred_tensor = graph.get_tensor_by_name("dense_3/Softmax:0")
+    
+    def prediction(self,bucket,key):
+        logging.info('start prediction')
+        
+        # Load image from S3 and prepare
+        logging.info('load image')
+        obj = s3client.get_object(Bucket=bucket, Key=key)
+        img_stream = io.BytesIO(obj['Body'].read())
+        x = cv2.imdecode(np.fromstring(img_stream.read(), np.uint8), 1)
+    
+        h, w, c = x.shape
+        x = x[int(h/6):, :]
+        x = cv2.resize(x, (224, 224))
+        x = x.astype('float32') / 255.0
+    
+        # Make prediction
+        logging.info('make prediction')
+        pred = self.sess.run(self.pred_tensor, feed_dict={self.image_tensor: np.expand_dims(x, axis=0)})
+        logging.info('prediction made')
+        # Format data
+        data = {'prediction':inv_mapping[pred.argmax(axis=1)[0]],'confidence':'Normal: {:.3f}, Pneumonia: {:.3f}, COVID-19: {:.3f}'.format(pred[0][0], pred[0][1], pred[0][2])}
+        logging.info(data)
+    
+        return data
 
-    image_tensor = graph.get_tensor_by_name("input_1:0")
-    pred_tensor = graph.get_tensor_by_name("dense_3/Softmax:0")
 
-    # Load image from S3 and prepare
-    logging.info('load image')
-    obj = s3client.get_object(Bucket=bucket, Key=key)
-    img_stream = io.BytesIO(obj['Body'].read())
-    x = cv2.imdecode(np.fromstring(img_stream.read(), np.uint8), 1)
+# Load model
+model = Model(meta_url,ckpt_url)
+logging.info('model initialized')
 
-    h, w, c = x.shape
-    x = x[int(h/6):, :]
-    x = cv2.resize(x, (224, 224))
-    x = x.astype('float32') / 255.0
+app = Flask(__name__)
 
-    # Make prediction
-    logging.info('make prediction')
-    pred = sess.run(pred_tensor, feed_dict={image_tensor: np.expand_dims(x, axis=0)})
-    logging.info('prediction made')
-    # Format data
-    data = {'prediction':inv_mapping[pred.argmax(axis=1)[0]],'confidence':'Normal: {:.3f}, Pneumonia: {:.3f}, COVID-19: {:.3f}'.format(pred[0][0], pred[0][1], pred[0][2])}
-    logging.info(data)
+# Launch Celery for deferred actions
+celery = Celery(app.name, broker=redis_server)    
+celery.conf.update(app.config)
 
-    return data
-
-# Extract data from incoming event
-def extract_data(msg):
-    return msg['data']
-
-# Run this when a new event has been received
-def run_event(event,sess,graph):
-    logging.info(event.Data())
-
-    # Retrieve info from notification
-    extracted_data = extract_data(event.Data())
-    uid = extracted_data['uid']
-    img_key = extracted_data['image_name']
+@celery.task(bind=False)
+def process(uid,img_key):
     logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
-      
+
     # Message user that we're starting
     url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
     r =requests.get(url)
 
     # Make prediction
-    result = prediction(sess,graph,image_bucket,img_key)
+    result = model.prediction(image_bucket,img_key)
+    logging.info('result=' + result['prediction'])
 
     # Send result
     url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction' + result['prediction'] + '&confidence=' + result['confidence']
-    r =requests.get(url)
+    r =requests.get(url) 
 
-    logging.info('result=' + result['prediction'])
+@app.route('/', methods=['POST'])
+def get_post():
+    data = request.get_json()['data']
+    uid = data['uid']
+    img_key = data['image_name']
+    process(uid,img_key)
+    return 'data processing...'
 
-# Load model
-sess,graph = init_tf_session(weightspath,metaname,ckptname)
-logging.info('model loaded')
-
-# Start event listener
-client = CloudeventsServer()
-client.start_receiver(run_event,sess,graph)
+serve(app, host="0.0.0.0", port=8080)   
