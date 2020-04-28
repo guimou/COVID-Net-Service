@@ -16,13 +16,12 @@ import Alert from 'react-bootstrap/Alert'
 import Table from 'react-bootstrap/Table'
 import { v4 as uuidv4 } from 'uuid';
 
-
 class App extends Component {
 
   constructor(props) {
     super(props);
     this.uid = uuidv4()
-    this.client = new W3CWebSocket('ws://127.0.0.1:3030?uid=' + this.uid);
+    this.client = new W3CWebSocket('ws://ws-' + window.location.hostname + ':8000?uid=' + this.uid);
     this.state = {
       selectedFile: null,
       loaded: 0,
@@ -30,7 +29,7 @@ class App extends Component {
     }
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.client.onmessage = (ms) => {
       let content = JSON.parse(ms.data)
 
