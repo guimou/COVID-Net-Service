@@ -15,7 +15,7 @@ from flask import Flask, jsonify, make_response, request
 from waitress import serve
 
 # Set logging
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 # General Variables
 access_key = os.environ['AWS_ACCESS_KEY_ID']
@@ -29,6 +29,7 @@ metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 redis_host = os.environ['REDIS_HOST']
 redis_port = os.environ['REDIS_PORT']
+redis_password = os.environ['REDIS_PASSWORD']
 model_loaded = False
 model_loading = False
 
@@ -45,7 +46,7 @@ s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
                         use_ssl = True if 'https' in service_point else False)
 
 # Redis client used to make a lock to ensure celery executes only one task at a time (for model loading)
-redis_client = redis.Redis(host=redis_host, port=redis_port)
+redis_client = redis.Redis(host=redis_host, port=redis_port, password=redis_password)
 
 class Model(object):
     def __init__(self,meta_url,ckpt_url):
