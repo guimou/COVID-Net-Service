@@ -29,6 +29,7 @@ weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 redis_server = os.environ['REDIS_SERVER']
+redis_port = os.environ['REDIS_PORT']
 model_loaded = False
 model_loading = False
 
@@ -45,7 +46,7 @@ s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
                         use_ssl = True if 'https' in service_point else False)
 
 # Redis client used to make a lock to ensure celery executes only one task at a time (for model loading)
-redis_client = redis.Redis(host=redis_server, port=6378)
+redis_client = redis.Redis(host=redis_server, port=redis_port)
 
 class Model(object):
     def __init__(self,meta_url,ckpt_url):
@@ -92,7 +93,7 @@ app = Flask(__name__)
 model = None
 
 # Launch Celery for deferred actions
-celery = Celery(app.name, broker=redis_server)    
+celery = Celery(app.name, broker=redis_server+':'+redis_port+'/0')    
 celery.conf.update(app.config)
 
 @contextmanager
