@@ -36,7 +36,6 @@ class App extends Component {
   componentDidMount() {
     this.client.onmessage = (ms) => {
       let content = JSON.parse(ms.data)
-
       if (content.topic === "result") {
         this.tableUpdate(content.data.image_name,content.data.prediction,content.data.confidence)
         toast.success('New results received!')
@@ -45,9 +44,6 @@ class App extends Component {
       if (content.topic === "message") {
         toast.info(content.data.message)
       }
-
-
-      /* console.log(JSON.parse(ms.data).data) */
     };
   }
 

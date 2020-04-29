@@ -187,6 +187,7 @@ app.post('/upload/:uid', function (req, res) {
 
 // API - receive result
 app.get('/result', function (req, res, next) {
+  console.log(req.query)
   console.log('new result for ' + req.query.uid + ' received: ' + req.query.prediction + ', confidence: ' + req.query.confidence)
   socketServer.clients.forEach(function each(ws) {
     if (ws.uid === req.query.uid) {
