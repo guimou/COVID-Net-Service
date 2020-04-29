@@ -14,6 +14,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Alert from 'react-bootstrap/Alert'
 import Table from 'react-bootstrap/Table'
+import Spinner from 'react-bootstrap/Spinner'
 import { v4 as uuidv4 } from 'uuid';
 
 class App extends Component {
@@ -21,6 +22,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.uid = uuidv4()
+    this.showSpinner = {show:false}
     if (process.env.NODE_ENV === 'development') {
       this.client = new W3CWebSocket('ws://localhost:8000?uid=' + this.uid)
     } else {
@@ -116,6 +118,7 @@ class App extends Component {
       for (var x = 0; x < this.state.selectedFile.length; x++) {
         data.append('file', this.state.selectedFile[x])
       }
+      this.showSpinner = {show:true}
       axios.post("/upload/" + this.uid, data, {
         onUploadProgress: ProgressEvent => {
           this.setState({
@@ -138,6 +141,7 @@ class App extends Component {
 
   tableUpdate = (image_name, prediction, confidence) => {
     console.log('updating table')
+    this.showSpinner = {show:true}
     var table = document.getElementById("resultTable");
     var row = table.insertRow(1);
     var cell1 = row.insertCell(0);
@@ -196,7 +200,17 @@ class App extends Component {
         </Row>
         <Row>
           <Col xs={10}>
-            <h2>Results</h2>
+            <h2>Results  {this.showSpinner.show && <Button id="btn-loading"  variant="primary" disabled>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+              />
+              &nbsp;Loading...
+            </Button>}
+            </h2>
           </Col>
         </Row>
         <Row>
