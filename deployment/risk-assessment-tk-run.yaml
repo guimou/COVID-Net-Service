@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: risk-assessment-build
+spec:
+  params:
+    - name: context
+      value: ./containers/risk-assessment
+  pipelineRef:
+    name: image-build
+  resources:
+    - name: git-repo
+      resourceRef:
+        name: covid-repo
+    - name: push-image
+      resourceRef:
+        name: risk-assessment-image
+  serviceAccountName: pipeline
+  timeout: 1h0m0s

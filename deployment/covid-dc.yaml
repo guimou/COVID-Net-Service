@@ -64,7 +64,7 @@ spec:
             - configMapRef:
                 name: covid
             - secretRef:
-                name: s3-rook
+                name: covid-s3-store
           image: image-registry.openshift-image-registry.svc:5000/covid/covid:latest
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

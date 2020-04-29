@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: covid
+spec:
+  ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: 8000-tcp
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+  selector:
+    app: covid
+  sessionAffinity: None
+status:
+  loadBalancer: {}

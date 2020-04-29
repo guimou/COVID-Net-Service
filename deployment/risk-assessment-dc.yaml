@@ -2,6 +2,8 @@ kind: DeploymentConfig
 apiVersion: apps.openshift.io/v1
 metadata:
   name: risk-assessment
+  labels:
+    app: risk-assessment
 spec:
   triggers:
     - type: ImageChange
@@ -18,16 +20,23 @@ spec:
   template:
     metadata:
       labels:
-        name: risk-assessment
+        app: risk-assessment
+        deploymentconfig: risk-assessment
     spec:
       containers:
         - name: risk-assessment
           image: image-registry.openshift-image-registry.svc:5000/covid/risk-assessment:latest
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-password
+                  name: redis
           envFrom:
           - configMapRef:
               name: risk-assessment
           - secretRef:
-              name: s3
+              name: covid-s3-store
           ports:
             - containerPort: 8080
               protocol: TCP
