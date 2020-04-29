@@ -141,7 +141,7 @@ class App extends Component {
 
   tableUpdate = (image_name, prediction, confidence) => {
     console.log('updating table')
-    this.showSpinner = {show:true}
+    this.showSpinner = {show:false}
     var table = document.getElementById("resultTable");
     var row = table.insertRow(1);
     var cell1 = row.insertCell(0);
