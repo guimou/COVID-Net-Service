@@ -7,13 +7,12 @@ from contextlib import contextmanager
 import boto3
 import cv2
 import numpy as np
+import redis
 import requests
 import tensorflow as tf
 from celery import Celery
 from flask import Flask, jsonify, make_response, request
 from waitress import serve
-
-import redis
 
 # Set logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -46,7 +45,7 @@ s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
                         use_ssl = True if 'https' in service_point else False)
 
 # Redis client used to make a lock to ensure celery executes only one task at a time (for model loading)
-redis_client = redis.Redis(host=redis_server, port=redis_port)
+redis_client = redis.Redis(host=redis_host, port=redis_port)
 
 class Model(object):
     def __init__(self,meta_url,ckpt_url):
