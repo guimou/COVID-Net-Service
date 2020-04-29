@@ -166,6 +166,11 @@ app.get('/image/:id', function (req, res, next) {
 
 // API - upload images
 app.post('/upload/:uid', function (req, res) {
+  socketServer.clients.forEach(function each(ws) {
+    if (ws.uid === req.query.uid) {
+      ws.send(JSON.stringify({ topic: 'message', data: { message: 'Image(s) uploaded, preparing for processing...' } }))
+    }
+  });
   upload(req, res, function (err) {
     if (err instanceof multer.MulterError) {
       console.log(err)

@@ -37,7 +37,7 @@ class App extends Component {
     this.client.onmessage = (ms) => {
       let content = JSON.parse(ms.data)
       if (content.topic === "result") {
-        this.tableUpdate(content.data.image_name,content.data.prediction,content.data.confidence)
+        this.tableUpdate(content.data.image_name, content.data.prediction, content.data.confidence)
         toast.success('New results received!')
       }
 
@@ -124,7 +124,7 @@ class App extends Component {
         },
       })
         .then(res => { // then print response status
-          toast.success('Your image(s) has(ve) been uploaded. They will now be analyzed, please wait for results...')
+          toast.info('Processing starting...')
         })
         .catch(err => { // then print response status
           toast.error('upload fail')
@@ -161,14 +161,13 @@ class App extends Component {
         <Row>
           <Col xs={10}><h2>COVID19 Risk Assessment</h2>
             <p>
-              This site allows you to submit an X-Ray image and get a risk assessment using COVID-Net models.
-
+              This application allows you to submit an X-Ray image and get a risk assessment using COVID-Net models.
             </p>
             <Alert variant="warning">
               <Alert.Heading>Warning</Alert.Heading>
               <p>
-                The COVID-Net models used here are intended to be used as reference models that can be built upon and enhanced as new data becomes available.
-                They are currently at a research stage and not yet intended as production-ready models (not meant for direct clinical diagnosis), and we are working continuously to improve them as new data becomes available.
+                The COVID-Net models used by this application are intended to be used as reference models that can be built upon and enhanced as new data becomes available.
+                They are currently at a research stage and not yet intended as production-ready models (not meant for direct clinical diagnosis), and the COVID-Net team is working continuously to improve them as new data becomes available.
                 Please do not use this service for self-diagnosis and seek help from your local health authorities.
               </p>
               <hr />
@@ -182,7 +181,7 @@ class App extends Component {
           <Col xs={10}>
             <Form>
               <FormGroup>
-                <Form.Label>Upload Your File(s) </Form.Label>
+                <Form.Label>Upload Your File(s), up to ten at a time</Form.Label>
                 <Form.Control type="file" multiple onChange={this.onChangeHandler}></Form.Control>
               </FormGroup>
               <ToastContainer />
