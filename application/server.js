@@ -1,12 +1,11 @@
 const express = require('express');
 const WebSocket = require('ws');
-const kafka = require('kafka-node');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const cors = require('cors');
 const path = require('path');
 const url = require('url');
-const uuid = require('uuid')
+const axios = require('axios');
 
 require('dotenv').config();
 
@@ -38,55 +37,6 @@ function create_cloudevent(uid, image_name) {
 
 
 /**************************/
-/* Kafka functions        */
-/**************************/
-
-function publish(topic, message) {
-  const client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_ENDPOINT }),
-    producer = new kafka.Producer(client);
-
-  // First wait for the producer to be initialized
-  producer.on(
-    'ready',
-    () => {
-      // Update metadata for the topic we'd like to publish to
-      client.refreshMetadata(
-        [topic],
-        (err) => {
-          if (err) {
-            throw err;
-          }
-
-          console.log(`Sending message to ${topic}: ${message}`);
-          producer.send(
-            [{ topic, messages: [message] }],
-            (err, result) => {
-              console.log(err || result);
-            }
-          );
-        }
-      );
-    }
-  );
-
-  // Handle errors
-  producer.on(
-    'error',
-    (err) => {
-      console.log('error', err);
-    }
-  );
-}
-
-
-function send_kafka_message(uid, image_name) {
-  let message = JSON.stringify(create_cloudevent(uid,image_name))
-  publish(process.env.KAFKA_TOPIC, message)
-}
-
-
-
-/**************************/
 /* S3 functions           */
 /**************************/
 
@@ -104,9 +54,6 @@ AWS.config.update({
 const s3Endpoint = process.env.S3_ENDPOINT;
 var s3 = new AWS.S3({ endpoint: s3Endpoint });
 
-/**************************/
-/* Upload functions       */
-/**************************/
 var cloudStorage = multerS3({
   s3: s3,
   bucket: process.env.BUCKETNAME,
@@ -121,6 +68,18 @@ var cloudStorage = multerS3({
 });
 
 var upload = multer({ storage: cloudStorage }).array('file');
+
+/***********************************/
+/* Risk-assessment functions       */
+/***********************************/
+
+function make_risk_assement(uid, image_name) {
+  let message = JSON.stringify(create_cloudevent(uid,image_name))
+  axios.post({
+    url: process.env.RISK_ASSESSMENT_SERVICE,
+    data: message
+  });
+}
 
 
 /**************************/
@@ -182,8 +141,8 @@ app.post('/upload/:uid', function (req, res) {
       // An unknown error occurred when uploading.
     }
     for (let i = 0; i < req.files.length; i++) {
-      console.log('Sendig Kafka message')
-      send_kafka_message(req.params.uid, req.files[i].key)
+      console.log('Sendig message to risk-assessment service')
+      make_risk_assement(req.params.uid, req.files[i].key)
     }
     return res.status(200).send(req.file)
     // Everything went fine.

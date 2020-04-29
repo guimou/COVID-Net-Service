@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: redis
+spec:
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+  selector:
+    name: redis
+  sessionAffinity: None
+status:
+  loadBalancer: {}

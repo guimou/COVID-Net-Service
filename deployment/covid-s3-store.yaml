@@ -1,0 +1,7 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: covid-s3-store
+spec:
+  bucketName: covid-s3-store
+  storageClassName: openshift-storage.noobaa.io

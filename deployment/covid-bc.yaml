@@ -1,0 +1,50 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: covid
+  labels:
+    app: covid
+    app.kubernetes.io/component: covid
+    app.kubernetes.io/instance: covid
+    app.kubernetes.io/name: nodejs
+    app.kubernetes.io/part-of: covid
+    app.openshift.io/runtime: nodejs
+    app.openshift.io/runtime-version: 10-SCL
+  annotations:
+    app.openshift.io/vcs-ref: direct-connect
+    app.openshift.io/vcs-uri: 'https://github.com/guimou/COVID-Net-Service.git'
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'covid:latest'
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: 'nodejs:10-SCL'
+  postCommit: {}
+  source:
+    type: Git
+    git:
+      uri: 'https://github.com/guimou/COVID-Net-Service.git'
+      ref: direct-connect
+    contextDir: /application
+  triggers:
+    - type: Generic
+      generic:
+        secretReference:
+          name: covid-net-service-git-generic-webhook-secret
+    - type: GitHub
+      github:
+        secretReference:
+          name: covid-net-service-git-github-webhook-secret
+    - type: ImageChange
+    - type: ConfigChange
+  runPolicy: Serial

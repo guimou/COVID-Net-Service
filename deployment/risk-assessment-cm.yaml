@@ -1,0 +1,17 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: risk-assessment
+data:
+  APPLICATION_URL: 'http://covid.covid:8080'
+  WEIGHTSPATH: models/COVIDNet-CXR-Large
+  MODEL_BUCKET: covid-s3-store
+  S3_VERIFY_SSL: '0'
+  REDIS_PORT: '6379'
+  REDIS_HOST: redis.covid
+  IMAGE_BUCKET: covid-s3-store
+  METANAME: model.meta
+  S3_USE_HTTPS: '0'
+  S3_ENDPOINT: s3.openshift-storage.svc.cluster.local
+  CKPTNAME: model-8485
+  S3_IMAGES_ENDPOINT: 'http://s3.openshift-storage.svc.cluster.local'

@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: risk-assessment
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    name: risk-assessment
+  sessionAffinity: None
+status:
+  loadBalancer: {}

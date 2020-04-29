@@ -1,0 +1,73 @@
+kind: DeploymentConfig
+apiVersion: apps.openshift.io/v1
+metadata:
+  annotations:
+    app.openshift.io/vcs-ref: direct-connect
+    app.openshift.io/vcs-uri: 'https://github.com/guimou/COVID-Net-Service.git'
+  name: covid
+  namespace: covid
+  labels:
+    app: covid
+    app.kubernetes.io/component: covid
+    app.kubernetes.io/instance: covid
+    app.kubernetes.io/name: nodejs
+    app.kubernetes.io/part-of: covid
+    app.openshift.io/runtime: nodejs
+    app.openshift.io/runtime-version: 10-SCL
+spec:
+  strategy:
+    type: Rolling
+    rollingParams:
+      updatePeriodSeconds: 1
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      maxUnavailable: 25%
+      maxSurge: 25%
+    resources: {}
+    activeDeadlineSeconds: 21600
+  triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - covid
+        from:
+          kind: ImageStreamTag
+          namespace: covid
+          name: 'covid:latest'
+    - type: ConfigChange
+  replicas: 1
+  revisionHistoryLimit: 10
+  test: false
+  selector:
+    app: covid
+    deploymentconfig: covid
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: covid
+        deploymentconfig: covid
+    spec:
+      containers:
+        - resources: {}
+          terminationMessagePath: /dev/termination-log
+          name: covid
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8000
+              protocol: TCP
+          imagePullPolicy: Always
+          terminationMessagePolicy: File
+          envFrom:
+            - configMapRef:
+                name: covid
+            - secretRef:
+                name: s3-rook
+          image: image-registry.openshift-image-registry.svc:5000/covid/covid:latest
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
