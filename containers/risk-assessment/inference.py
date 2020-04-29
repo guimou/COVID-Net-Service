@@ -28,7 +28,7 @@ application_url = os.environ['APPLICATION_URL']
 weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
-redis_server = os.environ['REDIS_SERVER']
+redis_host = os.environ['REDIS_HOST']
 redis_port = os.environ['REDIS_PORT']
 model_loaded = False
 model_loading = False
@@ -93,7 +93,7 @@ app = Flask(__name__)
 model = None
 
 # Launch Celery for deferred actions
-celery = Celery(app.name, broker=redis_server+':'+redis_port+'/0')    
+celery = Celery(app.name, broker='redis://' + redis_host + ':' + redis_port + '/0')    
 celery.conf.update(app.config)
 
 @contextmanager
