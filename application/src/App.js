@@ -21,7 +21,11 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.uid = uuidv4()
-    this.client = new W3CWebSocket('ws://ws-' + window.location.hostname + ':8000?uid=' + this.uid);
+    if (process.env.NODE_ENV === 'development') {
+      this.client = new W3CWebSocket('ws://localhost:8000?uid=' + this.uid)
+    } else {
+      this.client = new W3CWebSocket('ws://ws-' + window.location.hostname + '?uid=' + this.uid);
+    }
     this.state = {
       selectedFile: null,
       loaded: 0,
