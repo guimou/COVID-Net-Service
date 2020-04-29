@@ -167,7 +167,7 @@ app.get('/image/:id', function (req, res, next) {
 // API - upload images
 app.post('/upload/:uid', function (req, res) {
   socketServer.clients.forEach(function each(ws) {
-    if (ws.uid === req.query.uid) {
+    if (ws.uid === req.params.uid) {
       ws.send(JSON.stringify({ topic: 'message', data: { message: 'Image(s) uploaded, preparing for processing...' } }))
     }
   });
@@ -228,10 +228,6 @@ socketServer.on('connection', (socketClient, req) => {
 
   socketClient.uid = parameters.query.uid
   console.log('connected: ' + socketClient.uid);
-
-  socketClient.on('message', (message) => {
-    socketClient.send('Bonnar')
-  });
 
   socketClient.on('close', (socketClient) => {
     console.log('closed');
