@@ -2,6 +2,7 @@ import io
 import logging
 import os
 import sys
+from contextlib import contextmanager
 
 import boto3
 import cv2
@@ -9,8 +10,10 @@ import numpy as np
 import requests
 import tensorflow as tf
 from celery import Celery
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, jsonify, make_response, request
 from waitress import serve
+
+import redis
 
 # Set logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -26,14 +29,12 @@ weightspath = os.environ['WEIGHTSPATH']
 metaname = os.environ['METANAME']
 ckptname = os.environ['CKPTNAME']
 redis_server = os.environ['REDIS_SERVER']
+model_loaded = False
+model_loading = False
 
 # TF initialization and variables
-#sess = tf.compat.v1.Session()
-#graph = tf.get_default_graph()
-
 mapping = {'normal': 0, 'pneumonia': 1, 'COVID-19': 2}
 inv_mapping = {0: 'normal', 1: 'pneumonia', 2: 'COVID-19'}
-
 meta_url = 's3://' + model_bucket + '/' + weightspath + '/' + metaname
 ckpt_url = 's3://' + model_bucket + '/' + weightspath + '/' + ckptname
 
@@ -42,6 +43,9 @@ s3client = boto3.client('s3','us-east-1', endpoint_url=service_point,
                        aws_access_key_id = access_key,
                        aws_secret_access_key = secret_key,
                         use_ssl = True if 'https' in service_point else False)
+
+# Redis client used to make a lock to ensure celery executes only one task at a time (for model loading)
+redis_client = redis.Redis(host=redis_server, port=6378)
 
 class Model(object):
     def __init__(self,meta_url,ckpt_url):
@@ -55,11 +59,10 @@ class Model(object):
     
         self.image_tensor = graph.get_tensor_by_name("input_1:0")
         self.pred_tensor = graph.get_tensor_by_name("dense_3/Softmax:0")
+        logging.info('model initialized')
     
-    def prediction(self,bucket,key):
-        logging.info('start prediction')
-        
-        # Load image from S3 and prepare
+    def prediction(self,bucket,key):    
+        # Load image from S3 and prepare it
         logging.info('load image')
         obj = s3client.get_object(Bucket=bucket, Key=key)
         img_stream = io.BytesIO(obj['Body'].read())
@@ -73,7 +76,7 @@ class Model(object):
         # Make prediction
         logging.info('make prediction')
         pred = self.sess.run(self.pred_tensor, feed_dict={self.image_tensor: np.expand_dims(x, axis=0)})
-        logging.info('prediction made')
+
         # Format data
         data = {'prediction':inv_mapping[pred.argmax(axis=1)[0]],'confidence':'Normal: {:.3f}, Pneumonia: {:.3f}, COVID-19: {:.3f}'.format(pred[0][0], pred[0][1], pred[0][2])}
         logging.info(data)
@@ -81,31 +84,54 @@ class Model(object):
         return data
 
 
-# Load model
-model = Model(meta_url,ckpt_url)
-logging.info('model initialized')
+def send_message(uid,message):
+    url = application_url + '/message?uid=' + uid + '&message=' + message
+    r =requests.get(url)
 
 app = Flask(__name__)
+model = None
 
 # Launch Celery for deferred actions
 celery = Celery(app.name, broker=redis_server)    
 celery.conf.update(app.config)
 
+@contextmanager
+def redis_lock(lock_name):
+    """Yield 1 if specified lock_name is not already set in redis. Otherwise returns 0.
+
+    Enables sort of lock functionality.
+    """
+    status = redis_client.set(lock_name, 'lock', nx=True)
+    try:
+        yield status
+    finally:
+        redis_client.delete(lock_name)
+
+
 @celery.task(bind=False)
 def process(uid,img_key):
-    logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
+    global model, model_loaded
 
-    # Message user that we're starting
-    url = application_url + '/message?uid=' + uid + '&message=Starting analysis of image: ' + img_key 
-    r =requests.get(url)
+    with redis_lock('my_lock') as acquired:
+        if not model_loaded:
+            send_message(uid,'Loading the model, please wait a few seconds...')
+            # Load model
+            model = Model(meta_url,ckpt_url)
+            model_loaded = True
+            send_message(uid,'Model loaded!')
+            
+        logging.info('Analyzing: ' + img_key + ' for uid: ' + uid)
 
-    # Make prediction
-    result = model.prediction(image_bucket,img_key)
-    logging.info('result=' + result['prediction'])
+        # Message user that we're starting
+        send_message(uid,'Starting analysis of image: ' + img_key)
 
-    # Send result
-    url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction=' + result['prediction'] + '&confidence=' + result['confidence']
-    r =requests.get(url) 
+        # Make prediction
+        result = model.prediction(image_bucket,img_key)
+        logging.info('result=' + result['prediction'])
+
+        # Send result
+        url = application_url + '/result?uid=' + uid + '&image_name=' + img_key + '&prediction=' + result['prediction'] + '&confidence=' + result['confidence']
+        r =requests.get(url) 
 
 @app.route('/', methods=['POST'])
 def get_post():
