@@ -158,7 +158,7 @@ class App extends Component {
     cell1.innerHTML = image_name.substring(37);
     cell2.innerHTML = prediction;
     cell3.innerHTML = confidence;
-    cell4.innerHTML = '<Image src="http://' + window.location.hostname + '/image/' + image_name + '" fluid />';
+    cell4.innerHTML = '<Image src="http://' + window.location.hostname + '/image/' + image_name + '" style="width: 400px;" />';
 
   }
 
