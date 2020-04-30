@@ -38,7 +38,9 @@ class App extends Component {
   componentDidMount() {
     this.client.onmessage = (ms) => {
       let content = JSON.parse(ms.data)
+
       if (content.topic === "result") {
+        this.showSpinner = {show:false}
         this.tableUpdate(content.data.image_name, content.data.prediction, content.data.confidence)
         toast.success('New results received!')
       }
@@ -141,7 +143,6 @@ class App extends Component {
 
   tableUpdate = (image_name, prediction, confidence) => {
     console.log('updating table')
-    this.showSpinner = {show:false}
     var table = document.getElementById("resultTable");
     var row = table.insertRow(1);
     var cell1 = row.insertCell(0);
@@ -149,7 +150,7 @@ class App extends Component {
     var cell3 = row.insertCell(2);
 
     // Add some text to the new cells:
-    cell1.innerHTML = image_name;
+    cell1.innerHTML = image_name.substring(37);
     cell2.innerHTML = prediction;
     cell3.innerHTML = confidence;
 
