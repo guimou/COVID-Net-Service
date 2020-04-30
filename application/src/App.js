@@ -208,7 +208,7 @@ class App extends Component {
                 role="status"
                 aria-hidden="true"
               />
-              &nbsp;Loading...
+              &nbsp;Processing...
             </Button>}
             </h2>
           </Col>
