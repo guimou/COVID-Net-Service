@@ -7,4 +7,4 @@ data:
   LISTEN_PORT: '8080'
   S3_ENDPOINT: 's3.openshift-storage.svc.cluster.local'
   WEB_SOCKET_PORT: '8000'
-  RISK_ASSESSMENT_SERVICE: http://risk-assessment.covid.svc.cluster.local
+  RISK_ASSESSMENT_SERVICE: http://risk-assessment.covid.svc.cluster.local:8080

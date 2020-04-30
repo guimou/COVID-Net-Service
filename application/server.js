@@ -74,10 +74,13 @@ var upload = multer({ storage: cloudStorage }).array('file');
 /***********************************/
 
 function make_risk_assement(uid, image_name) {
-  let message = JSON.stringify(create_cloudevent(uid,image_name))
-  axios.post({
-    url: process.env.RISK_ASSESSMENT_SERVICE,
-    data: message
+  let message = create_cloudevent(uid,image_name)
+  axios.post(process.env.RISK_ASSESSMENT_SERVICE,message)
+  .then(function (response) {
+    console.log('message sent to risk-assessment');
+  })
+  .catch(function (error) {
+    console.log(error);
   });
 }
 
@@ -151,7 +154,6 @@ app.post('/upload/:uid', function (req, res) {
 
 // API - receive result
 app.get('/result', function (req, res, next) {
-  console.log(req.query)
   console.log('new result for ' + req.query.uid + ' received: ' + req.query.prediction + ', confidence: ' + req.query.confidence)
   socketServer.clients.forEach(function each(ws) {
     if (ws.uid === req.query.uid) {

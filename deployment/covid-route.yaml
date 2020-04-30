@@ -1,7 +1,7 @@
 kind: Route
 apiVersion: route.openshift.io/v1
 metadata:
-  name: covid-net-service-git
+  name: covid
 spec:
   host: covid.apps.perf3.ocs.lab.eng.blr.redhat.com
   to:
@@ -11,3 +11,18 @@ spec:
   port:
     targetPort: 8080-tcp
   wildcardPolicy: None
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: ws-covid
+spec:
+  host: ws-covid.apps.perf3.ocs.lab.eng.blr.redhat.com
+  to:
+    kind: Service
+    name: covid
+    weight: 100
+  port:
+    targetPort: 8000-tcp
+  wildcardPolicy: None
+
