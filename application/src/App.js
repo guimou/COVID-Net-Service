@@ -15,6 +15,7 @@ import Col from 'react-bootstrap/Col';
 import Alert from 'react-bootstrap/Alert'
 import Table from 'react-bootstrap/Table'
 import Spinner from 'react-bootstrap/Spinner'
+import Image from 'react-bootstrap/Image'
 import { v4 as uuidv4 } from 'uuid';
 
 class App extends Component {
@@ -22,16 +23,15 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.uid = uuidv4()
-    this.showSpinner = {show:false}
     if (process.env.NODE_ENV === 'development') {
       this.client = new W3CWebSocket('ws://localhost:8000?uid=' + this.uid)
     } else {
       this.client = new W3CWebSocket('ws://ws-' + window.location.hostname + '?uid=' + this.uid);
     }
     this.state = {
+      showSpinner: false,
       selectedFile: null,
-      loaded: 0,
-      slides: []
+      loaded: 0
     }
   }
 
@@ -40,7 +40,9 @@ class App extends Component {
       let content = JSON.parse(ms.data)
 
       if (content.topic === "result") {
-        this.showSpinner = {show:false}
+        this.setState({
+          showSpinner: false,
+        });
         this.tableUpdate(content.data.image_name, content.data.prediction, content.data.confidence)
         toast.success('New results received!')
       }
@@ -120,7 +122,9 @@ class App extends Component {
       for (var x = 0; x < this.state.selectedFile.length; x++) {
         data.append('file', this.state.selectedFile[x])
       }
-      this.showSpinner = {show:true}
+      this.setState({
+        showSpinner: true,
+      });
       axios.post("/upload/" + this.uid, data, {
         onUploadProgress: ProgressEvent => {
           this.setState({
@@ -153,6 +157,7 @@ class App extends Component {
     cell1.innerHTML = image_name.substring(37);
     cell2.innerHTML = prediction;
     cell3.innerHTML = confidence;
+    cell4.innerHTML = '<Image src="http://' + window.location.hostname + '/image/' + image_name + '" fluid />';
 
   }
 
@@ -161,6 +166,7 @@ class App extends Component {
   }
 
   render() {
+    const { showSpinner } = this.state.showSpinner;
     return (
       <Container className="background">
         <Row>
@@ -201,7 +207,7 @@ class App extends Component {
         </Row>
         <Row>
           <Col xs={10}>
-            <h2>Results  {this.showSpinner.show && <Button id="btn-loading"  variant="primary" disabled>
+            <h2>Results  {showSpinner && <Button id="btn-loading"  variant="primary" disabled>
               <Spinner
                 as="span"
                 animation="border"
@@ -222,6 +228,7 @@ class App extends Component {
                   <th>Image Name</th>
                   <th>Prediction</th>
                   <th>Confidence</th>
+                  <th>Image</th>
                 </tr>
               </thead>
             </Table>
