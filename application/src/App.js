@@ -111,7 +111,7 @@ class App extends Component {
       // if return true allow to setState
       this.setState({
         selectedFile: files,
-        loaded: 0
+        loaded: 60
       })
     }
   }
@@ -134,6 +134,9 @@ class App extends Component {
       })
         .then(res => { // then print response status
           toast.info('Processing starting...')
+          this.setState({
+            loaded: 0,
+          })
         })
         .catch(err => { // then print response status
           toast.error('upload fail')
@@ -168,9 +171,10 @@ class App extends Component {
 
   render() {
     return (
-      <Container className="background">
+      <Container fluid className="background">
         <Row>
-          <Col xs={10}><h2>COVID19 Risk Assessment</h2>
+        <Col></Col>
+          <Col xs={8}><h2>COVID19 Risk Assessment</h2>
             <p>
               This application allows you to submit an X-Ray image and get a risk assessment using COVID-Net models.
             </p>
@@ -187,27 +191,45 @@ class App extends Component {
                 </p>
             </Alert>
           </Col>
+          <Col></Col>
         </Row>
         <Row>
-          <Col xs={10}>
+        <Col></Col>
+          <Col xs={6}>
+            Upload Your File(s), up to ten at a time
+        </Col>
+        <Col></Col>
+        </Row>
+        <Row>
+        <Col></Col>
+          <Col xs={6}>
             <Form>
               <FormGroup>
-                <Form.Label>Upload Your File(s), up to ten at a time</Form.Label>
                 <Form.Control type="file" multiple onChange={this.onChangeHandler}></Form.Control>
               </FormGroup>
               <ToastContainer />
               <FormGroup>
-                <ProgressBar max="100" color="primary" value={this.state.loaded} >{Math.round(this.state.loaded, 2)}%</ProgressBar>
+                {(this.state.loaded !== 0) && <ProgressBar animated max="100" color="primary" now={Math.round(this.state.loaded, 2)} label={Math.round(this.state.loaded, 2) + '%'}></ProgressBar>}
               </FormGroup>
-              <Button type="button" className="btn btn-primary btn-block" onClick={this.onUploadClickHandler}>Upload</Button>
             </Form></Col>
+            <Col></Col>
         </Row>
         <Row>
-          <Col>&nbsp;</Col>
+          <Col xs={5}></Col>
+          <Col><Button align="center" type="button" className="btn btn-primary btn-block" onClick={this.onUploadClickHandler}>Upload</Button></Col>
+          <Col xs={5}></Col>
         </Row>
         <Row>
-          <Col xs={10}>
-            <h2>Results  {this.state.showSpinner && <Button id="btn-loading"  variant="primary" disabled>
+        <Col></Col>
+          <Col xs={8}>
+          <hr/>
+          </Col>
+          <Col></Col>
+        </Row>
+        <Row>
+        <Col></Col>
+          <Col xs={8}>
+            <h2>Results  {this.state.showSpinner && <Button id="btn-loading" variant="primary" disabled>
               <Spinner
                 as="span"
                 animation="border"
@@ -219,9 +241,11 @@ class App extends Component {
             </Button>}
             </h2>
           </Col>
+          <Col></Col>
         </Row>
         <Row>
-          <Col xs={10}>
+        <Col></Col>
+          <Col xs={8}>
             <Table striped bordered hover id="resultTable">
               <thead>
                 <tr>
@@ -233,6 +257,7 @@ class App extends Component {
               </thead>
             </Table>
           </Col>
+          <Col></Col>
         </Row>
       </Container>
 
