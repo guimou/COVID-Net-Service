@@ -167,7 +167,6 @@ class App extends Component {
   }
 
   render() {
-    const { showSpinner } = this.state.showSpinner;
     return (
       <Container className="background">
         <Row>
@@ -208,7 +207,7 @@ class App extends Component {
         </Row>
         <Row>
           <Col xs={10}>
-            <h2>Results  {showSpinner && <Button id="btn-loading"  variant="primary" disabled>
+            <h2>Results  {this.state.showSpinner && <Button id="btn-loading"  variant="primary" disabled>
               <Spinner
                 as="span"
                 animation="border"
