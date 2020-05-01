@@ -111,7 +111,7 @@ class App extends Component {
       // if return true allow to setState
       this.setState({
         selectedFile: files,
-        loaded: 60
+        loaded: 0
       })
     }
   }
